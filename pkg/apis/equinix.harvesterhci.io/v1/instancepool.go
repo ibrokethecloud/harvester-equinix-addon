@@ -39,4 +39,5 @@ type InstancePoolStatus struct {
 	Status    string `json:"status"`
 	Ready     int    `json:"ready"`
 	Requested int    `json:"requested"`
+	Needed    int    `json:"needed"`
 }

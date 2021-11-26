@@ -36,9 +36,6 @@ spec:
               billingCycle:
                 nullable: true
                 type: string
-              credentialSecret:
-                nullable: true
-                type: string
               customData:
                 nullable: true
                 type: string
@@ -148,9 +145,6 @@ spec:
     - jsonPath: .status.ready
       name: Ready
       type: string
-    - jsonPath: .status.waiting
-      name: Waiting
-      type: string
     - jsonPath: .status.requested
       name: Requested
       type: string
@@ -168,17 +162,35 @@ spec:
               customData:
                 nullable: true
                 type: string
+              facility:
+                items:
+                  nullable: true
+                  type: string
+                nullable: true
+                type: array
               features:
                 additionalProperties:
                   nullable: true
                   type: string
                 nullable: true
                 type: object
-              hardwareReservation_id:
+              ipxeScriptUrl:
+                nullable: true
+                type: string
+              isoUrl:
+                nullable: true
+                type: string
+              managementInterface:
+                nullable: true
+                type: string
+              metro:
                 nullable: true
                 type: string
               nosshKeys:
                 type: boolean
+              plan:
+                nullable: true
+                type: string
               projectsshKeys:
                 items:
                   nullable: true
@@ -199,6 +211,8 @@ spec:
             type: object
           status:
             properties:
+              needed:
+                type: integer
               ready:
                 type: integer
               requested:
@@ -206,8 +220,6 @@ spec:
               status:
                 nullable: true
                 type: string
-              waiting:
-                type: integer
             type: object
         type: object
     served: true
@@ -251,9 +263,6 @@ spec:
             alwaysPxe:
               type: boolean
             billingCycle:
-              nullable: true
-              type: string
-            credentialSecret:
               nullable: true
               type: string
             customData:
@@ -358,9 +367,6 @@ spec:
   - JSONPath: .status.ready
     name: Ready
     type: string
-  - JSONPath: .status.waiting
-    name: Waiting
-    type: string
   - JSONPath: .status.requested
     name: Requested
     type: string
@@ -386,17 +392,35 @@ spec:
             customData:
               nullable: true
               type: string
+            facility:
+              items:
+                nullable: true
+                type: string
+              nullable: true
+              type: array
             features:
               additionalProperties:
                 nullable: true
                 type: string
               nullable: true
               type: object
-            hardwareReservation_id:
+            ipxeScriptUrl:
+              nullable: true
+              type: string
+            isoUrl:
+              nullable: true
+              type: string
+            managementInterface:
+              nullable: true
+              type: string
+            metro:
               nullable: true
               type: string
             nosshKeys:
               type: boolean
+            plan:
+              nullable: true
+              type: string
             projectsshKeys:
               items:
                 nullable: true
@@ -417,6 +441,8 @@ spec:
           type: object
         status:
           properties:
+            needed:
+              type: integer
             ready:
               type: integer
             requested:
@@ -424,8 +450,6 @@ spec:
             status:
               nullable: true
               type: string
-            waiting:
-              type: integer
           type: object
       type: object
   version: v1

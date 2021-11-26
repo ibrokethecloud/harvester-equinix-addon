@@ -76,7 +76,6 @@ func Objects(v1beta1 bool) (result []runtime.Object, err error) {
 func List() []crd.CRD {
 	return []crd.CRD{
 		newCRD(&equinix.Instance{}, func(c crd.CRD) crd.CRD {
-			c.NonNamespace = true
 			return c.
 				WithColumn("Status", ".status.status").
 				WithColumn("InstanceID", ".status.instanceID").
@@ -85,11 +84,9 @@ func List() []crd.CRD {
 
 		}),
 		newCRD(&equinix.InstancePool{}, func(c crd.CRD) crd.CRD {
-			c.NonNamespace = true
 			return c.
 				WithColumn("Status", ".status.status").
 				WithColumn("Ready", ".status.ready").
-				WithColumn("Waiting", ".status.waiting").
 				WithColumn("Requested", ".status.requested")
 
 		}),
@@ -112,6 +109,7 @@ func newCRD(obj interface{}, customize func(crd.CRD) crd.CRD) crd.CRD {
 			Version: "v1",
 		},
 		Status:       true,
+		NonNamespace: true,
 		SchemaObject: obj,
 	}
 	if customize != nil {

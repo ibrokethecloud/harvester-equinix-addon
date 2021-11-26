@@ -167,6 +167,11 @@ func (in *InstancePoolSpec) DeepCopyInto(out *InstancePoolSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Facility != nil {
+		in, out := &in.Facility, &out.Facility
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

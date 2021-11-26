@@ -1,0 +1,10 @@
+apiVersion: equinix.harvesterhci.io/v1
+kind: InstancePool
+metadata:
+  name: demo
+spec:
+  count: 2
+  billingCycle: hourly
+  managementInterface: enp2s0f0np0
+  plan: c3.small.x86
+  metro: SG

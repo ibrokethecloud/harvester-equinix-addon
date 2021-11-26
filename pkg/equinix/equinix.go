@@ -82,7 +82,9 @@ func (m *MetalClient) CheckDeviceStatus(instance *api.Instance) (status *api.Ins
 }
 
 func (m *MetalClient) DeleteDevice(instance *api.Instance) (err error) {
-
+	if instance.Status.InstanceID == "" {
+		return nil
+	}
 	ok, err := m.deviceExists(instance.Status.InstanceID)
 	if err != nil {
 		return err
