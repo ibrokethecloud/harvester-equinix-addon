@@ -120,12 +120,18 @@ func (h *handler) ResolveNode(_ string, _ string, obj runtime.Object) ([]related
 					},
 				}, nil
 			}
-		} else {
+		}
+
+		if node.DeletionTimestamp != nil {
 			err := h.findAndDeleteInstance(node)
 			if err != nil {
 				return nil, err
 			}
 		}
+
+		// handle unreachable node and trigger deletion
+		// this will cause instancepool controller to spin up a new one
+		if node.Status !=
 	}
 	return nil, nil
 }
