@@ -71,6 +71,6 @@ func Register(ctx context.Context, cfg clientcmd.ClientConfig) error {
 
 	instanceController.Register(ctx, instanceFactory.Equinix().V1().Instance(), corecontrollers.Core().V1().Node())
 	instancePoolController.Register(ctx, instanceFactory.Equinix().V1().InstancePool(),
-		instanceFactory.Equinix().V1().Instance(), corecontrollers.Core().V1().Secret(), corecontrollers.Core().V1().Node())
+		instanceFactory.Equinix().V1().Instance(), corecontrollers.Core().V1().Secret(), corecontrollers.Core().V1().Node(), corecontrollers.Core().V1().Service())
 	return start.All(ctx, 5, instanceFactory)
 }

@@ -1,0 +1,9 @@
+apiVersion: equinix.harvesterhci.io/v1
+kind: Instance
+metadata:
+  name: node2
+spec:
+  billingCycle: hourly
+  plan: c3.small.x86
+  metro: SG
+    #nodeCleanupWaitInterval: 5m

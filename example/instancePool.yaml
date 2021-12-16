@@ -1,10 +1,16 @@
 apiVersion: equinix.harvesterhci.io/v1
 kind: InstancePool
 metadata:
-  name: demo
+  name: harvester-pxe-worker
 spec:
-  count: 2
+  count: 1
   billingCycle: hourly
-  managementInterface: enp2s0f0np0
+  managementInterface:
+    - eth0
   plan: c3.small.x86
   metro: SG
+  nodeCleanupWaitInterval: 5m
+  managementBondingOptions:
+    mode: balance-tlb
+    miimon: "100"
+  isoUrl: https://releases.rancher.com/harvester/v1.0.0-rc1/harvester-v1.0.0-rc1-amd64.iso

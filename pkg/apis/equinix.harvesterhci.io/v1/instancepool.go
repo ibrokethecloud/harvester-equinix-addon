@@ -18,21 +18,23 @@ type InstancePool struct {
 }
 
 type InstancePoolSpec struct {
-	Count               int               `json:"count"`
-	BillingCycle        string            `json:"billingCycle,omitempty"`
-	SpotInstance        bool              `json:"spotInstance,omitempty"`
-	SpotPriceMax        resource.Quantity `json:"spotPriceMax,omitempty,string"`
-	CustomData          string            `json:"customData,omitempty"`
-	UserSSHKeys         []string          `json:"usersshKeys,omitempty"`
-	ProjectSSHKeys      []string          `json:"projectsshKeys,omitempty"`
-	Features            map[string]string `json:"features,omitempty"`
-	NoSSHKeys           bool              `json:"nosshKeys,omitempty"`
-	ManagementInterface string            `json:"managementInterface"`
-	IPXEScriptURL       string            `json:"ipxeScriptUrl,omitempty"`
-	ISOURL              string            `json:"isoUrl,omitempty"`
-	Plan                string            `json:"plan"`
-	Metro               string            `json:"metro,omitempty"`
-	Facility            []string          `json:"facility,omitempty"`
+	Count                    int               `json:"count"`
+	BillingCycle             string            `json:"billingCycle,omitempty"`
+	SpotInstance             bool              `json:"spotInstance,omitempty"`
+	SpotPriceMax             resource.Quantity `json:"spotPriceMax,omitempty,string"`
+	CustomData               string            `json:"customData,omitempty"`
+	UserSSHKeys              []string          `json:"usersshKeys,omitempty"`
+	ProjectSSHKeys           []string          `json:"projectsshKeys,omitempty"`
+	Features                 map[string]string `json:"features,omitempty"`
+	NoSSHKeys                bool              `json:"nosshKeys,omitempty"`
+	ManagementInterfaces     []string          `json:"managementInterface"`
+	ManagementBondingOptions map[string]string `json:"managementBondingOptions,omitempty"`
+	IPXEScriptURL            string            `json:"ipxeScriptUrl,omitempty"`
+	ISOURL                   string            `json:"isoUrl,omitempty"`
+	Plan                     string            `json:"plan"`
+	Metro                    string            `json:"metro,omitempty"`
+	Facility                 []string          `json:"facility,omitempty"`
+	NodeCleanupWaitInterval  *metav1.Duration  `json:"nodeCleanupWaitInterval,omitempty"`
 }
 
 type InstancePoolStatus struct {
@@ -40,4 +42,5 @@ type InstancePoolStatus struct {
 	Ready     int    `json:"ready"`
 	Requested int    `json:"requested"`
 	Needed    int    `json:"needed"`
+	Token     string `json:"token"`
 }

@@ -9,3 +9,6 @@ Pass two variables:
 Needs two keys:
 * METAL_AUTH_TOKEN
 * PROJECT_ID
+
+## CI
+Makefile for build and package

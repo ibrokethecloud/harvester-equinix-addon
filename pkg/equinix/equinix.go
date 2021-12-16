@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	api "github.com/harvester/harvester-equinix-addon/pkg/apis/equinix.harvesterhci.io/v1"
+	"github.com/harvester/harvester-equinix-addon/pkg/harvester"
 	"github.com/packethost/packngo"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 type MetalClient struct {
@@ -37,7 +39,7 @@ func (m *MetalClient) CreateNewDevice(instance *api.Instance) (status *api.Insta
 
 func (m *MetalClient) generateDeviceCreationRequest(instance *api.Instance) (dsr *packngo.DeviceCreateRequest) {
 	dsr = &packngo.DeviceCreateRequest{
-		Hostname:              fmt.Sprintf("%s-%s", instance.Name, instance.Namespace),
+		Hostname:              instance.Name,
 		Plan:                  instance.Spec.Plan,
 		Facility:              instance.Spec.Facility,
 		Metro:                 instance.Spec.Metro,
@@ -73,11 +75,12 @@ func (m *MetalClient) CheckDeviceStatus(instance *api.Instance) (status *api.Ins
 	}
 
 	if deviceStatus.State == "active" {
-		status.Status = "running"
+		status.Status = "ready"
 		status.PrivateIP = deviceStatus.GetNetworkInfo().PrivateIPv4
 		status.PublicIP = deviceStatus.GetNetworkInfo().PublicIPv4
+	} else {
+		status.Status = deviceStatus.State
 	}
-
 	return status, nil
 }
 
@@ -115,4 +118,86 @@ func (m *MetalClient) deviceExists(instanceID string) (ok bool, err error) {
 
 	return ok, nil
 
+}
+
+func (m *MetalClient) ReInstallDevice(instance *api.Instance) (status *api.InstanceStatus, err error) {
+	status = instance.Status.DeepCopy()
+
+	device, _, err := m.Devices.Get(instance.Status.InstanceID, nil)
+	if err != nil {
+		return status, err
+	}
+
+	// find mac addresses //
+	macAddresses := []string{}
+
+	for _, ifaceName := range instance.Spec.ManagementInterfaces {
+		port, err := device.GetPortByName(ifaceName)
+		if err != nil {
+			return status, err
+		}
+
+		macAddresses = append(macAddresses, port.Data.MAC)
+	}
+
+	cloudInit, err := updateCloudInit(instance.Spec.UserData, macAddresses, instance.Spec.ManagementBondingOptions)
+	if err != nil {
+		return status, err
+	}
+
+	ipxeURL := instance.Annotations["reconfig_ipxe_url"]
+	deviceUpdateRequest := &packngo.DeviceUpdateRequest{
+		IPXEScriptURL: &ipxeURL,
+		UserData:      &cloudInit,
+	}
+
+	_, _, err = m.Devices.Update(instance.Status.InstanceID, deviceUpdateRequest)
+	if err != nil {
+		return status, err
+	}
+
+	_, err = m.Devices.Reinstall(instance.Status.InstanceID, &packngo.DeviceReinstallFields{PreserveData: true, DeprovisionFast: true})
+
+	if err != nil {
+		return status, err
+	}
+
+	status.Status = "reinstalling"
+	return status, nil
+}
+
+func updateCloudInit(baseCloudInit string, macAddresses []string, bondOptions map[string]string) (string, error) {
+
+	hc := &harvester.HarvesterConfig{}
+	err := yaml.Unmarshal([]byte(baseCloudInit), hc)
+	if err != nil {
+		return "", err
+	}
+
+	networkInterfaces := []harvester.NetworkInterface{}
+	for _, macAddress := range macAddresses {
+		networkInterfaces = append(networkInterfaces, harvester.NetworkInterface{HwAddr: macAddress})
+	}
+
+	if hc.Networks == nil {
+		hc.Networks = make(map[string]harvester.Network)
+	}
+
+	mgmtNetwork := harvester.Network{
+		Interfaces:   networkInterfaces,
+		Method:       "dhcp",
+		DefaultRoute: true,
+	}
+
+	if bondOptions != nil {
+		mgmtNetwork.BondOptions = bondOptions
+	}
+
+	hc.Networks["harvester-mgmt"] = mgmtNetwork
+	updatedCloudInit, err := yaml.Marshal(hc)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("#cloud-config\n%s", string(updatedCloudInit)), nil
 }

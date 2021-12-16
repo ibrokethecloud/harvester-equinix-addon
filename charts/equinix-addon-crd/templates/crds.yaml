@@ -60,7 +60,22 @@ spec:
               ipxeScriptUrl:
                 nullable: true
                 type: string
+              managementBondingOptions:
+                additionalProperties:
+                  nullable: true
+                  type: string
+                nullable: true
+                type: object
+              managementInterfaces:
+                items:
+                  nullable: true
+                  type: string
+                nullable: true
+                type: array
               metro:
+                nullable: true
+                type: string
+              nodeCleanupWaitInterval:
                 nullable: true
                 type: string
               nosshKeys:
@@ -180,10 +195,22 @@ spec:
               isoUrl:
                 nullable: true
                 type: string
+              managementBondingOptions:
+                additionalProperties:
+                  nullable: true
+                  type: string
+                nullable: true
+                type: object
               managementInterface:
+                items:
+                  nullable: true
+                  type: string
+                nullable: true
+                type: array
+              metro:
                 nullable: true
                 type: string
-              metro:
+              nodeCleanupWaitInterval:
                 nullable: true
                 type: string
               nosshKeys:
@@ -218,6 +245,9 @@ spec:
               requested:
                 type: integer
               status:
+                nullable: true
+                type: string
+              token:
                 nullable: true
                 type: string
             type: object
@@ -289,7 +319,22 @@ spec:
             ipxeScriptUrl:
               nullable: true
               type: string
+            managementBondingOptions:
+              additionalProperties:
+                nullable: true
+                type: string
+              nullable: true
+              type: object
+            managementInterfaces:
+              items:
+                nullable: true
+                type: string
+              nullable: true
+              type: array
             metro:
+              nullable: true
+              type: string
+            nodeCleanupWaitInterval:
               nullable: true
               type: string
             nosshKeys:
@@ -410,10 +455,22 @@ spec:
             isoUrl:
               nullable: true
               type: string
+            managementBondingOptions:
+              additionalProperties:
+                nullable: true
+                type: string
+              nullable: true
+              type: object
             managementInterface:
+              items:
+                nullable: true
+                type: string
+              nullable: true
+              type: array
+            metro:
               nullable: true
               type: string
-            metro:
+            nodeCleanupWaitInterval:
               nullable: true
               type: string
             nosshKeys:
@@ -448,6 +505,9 @@ spec:
             requested:
               type: integer
             status:
+              nullable: true
+              type: string
+            token:
               nullable: true
               type: string
           type: object

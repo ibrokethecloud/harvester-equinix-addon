@@ -21,6 +21,7 @@ limitations under the License.
 package v1
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -167,10 +168,27 @@ func (in *InstancePoolSpec) DeepCopyInto(out *InstancePoolSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.ManagementInterfaces != nil {
+		in, out := &in.ManagementInterfaces, &out.ManagementInterfaces
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ManagementBondingOptions != nil {
+		in, out := &in.ManagementBondingOptions, &out.ManagementBondingOptions
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Facility != nil {
 		in, out := &in.Facility, &out.Facility
 		*out = make([]string, len(*in))
 		copy(*out, *in)
+	}
+	if in.NodeCleanupWaitInterval != nil {
+		in, out := &in.NodeCleanupWaitInterval, &out.NodeCleanupWaitInterval
+		*out = new(metav1.Duration)
+		**out = **in
 	}
 	return
 }
@@ -227,6 +245,23 @@ func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 	}
 	if in.Features != nil {
 		in, out := &in.Features, &out.Features
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.NodeCleanupWaitInterval != nil {
+		in, out := &in.NodeCleanupWaitInterval, &out.NodeCleanupWaitInterval
+		*out = new(metav1.Duration)
+		**out = **in
+	}
+	if in.ManagementInterfaces != nil {
+		in, out := &in.ManagementInterfaces, &out.ManagementInterfaces
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ManagementBondingOptions != nil {
+		in, out := &in.ManagementBondingOptions, &out.ManagementBondingOptions
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

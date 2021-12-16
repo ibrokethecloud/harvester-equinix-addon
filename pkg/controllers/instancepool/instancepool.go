@@ -24,7 +24,10 @@ const (
 	DefaultCredentialSecret = "equinix-addon"
 	DefaultNamespace        = "harvester-system"
 	DefaultISOURL           = "https://releases.rancher.com/harvester/master/harvester-master-amd64.iso"
-	DefaultIPXEScriptURL    = "https://raw.githubusercontent.com/harvester/ipxe-examples/main/equinix/ipxe-install"
+	DefaultIPXEScriptURL    = "https://raw.githubusercontent.com/ibrokethecloud/custom_pxe/master/master.ipxe"
+	InitialIPXEScriptURL    = "https://raw.githubusercontent.com/ibrokethecloud/custom_pxe/master/shell.ipxe"
+	DefaultInterface        = "eth0"
+	DefaultIngressService   = "ingress-expose"
 )
 
 var instanceLock sync.Mutex
@@ -35,17 +38,19 @@ type handler struct {
 	instance     controller.InstanceController
 	secret       corecontrollers.SecretController
 	node         corecontrollers.NodeController
+	service      corecontrollers.ServiceController
 }
 
 func Register(ctx context.Context, instancePool controller.InstancePoolController,
 	instance controller.InstanceController, secret corecontrollers.SecretController,
-	node corecontrollers.NodeController) {
+	node corecontrollers.NodeController, service corecontrollers.ServiceController) {
 	ipHandler := &handler{
 		ctx:          ctx,
 		instancePool: instancePool,
 		instance:     instance,
 		secret:       secret,
 		node:         node,
+		service:      service,
 	}
 	relatedresource.WatchClusterScoped(ctx, "instancePool-instance-change", ipHandler.ReconcileNodePool, instancePool, instance)
 	instancePool.OnChange(ctx, "instancePool-change", ipHandler.wrapper)
@@ -72,7 +77,7 @@ func (h *handler) wrapper(key string, ip *equinix.InstancePool) (*equinix.Instan
 
 func (h *handler) ReconcileNodePool(_ string, _ string, obj runtime.Object) ([]relatedresource.Key, error) {
 	if instance, ok := obj.(*equinix.Instance); ok {
-		if instance.Status.Status == "ready" || instance.DeletionTimestamp != nil {
+		if instance.Status.Status == "managed" || instance.DeletionTimestamp != nil {
 			instancePoolName := instance.Labels["instancePool"]
 			logrus.Infof("instance %s got updated. Reconcilling instancePool %s", instance.Name, instancePoolName)
 			return []relatedresource.Key{
@@ -93,7 +98,7 @@ func (h *handler) prepareInstancePool(key string, ip *equinix.InstancePool) (*eq
 	token, ok := os.LookupEnv("TOKEN")
 
 	if ok {
-		ip.Annotations["token"] = token
+		ip.Status.Token = token
 	} else {
 		config, err := os.ReadFile("/etc/rancher/rancherd/config.yaml")
 		if err != nil {
@@ -111,30 +116,18 @@ func (h *handler) prepareInstancePool(key string, ip *equinix.InstancePool) (*eq
 			return ip, errors.Wrap(err, "no token found in config.yaml")
 		}
 
-		if ip.Annotations == nil {
-			ip.Annotations = make(map[string]string)
-		}
-
-		ip.Annotations["token"] = token.(string)
+		ip.Status.Token = token.(string)
 	}
 	ip.Status.Needed = ip.Spec.Count
 	ip.Status.Status = "tokenReady"
 	ip.Status.Requested = ip.Spec.Count
-	_, err := h.instancePool.Update(ip)
-	if err != nil {
-		return ip, err
-	}
 
-	_, err = h.instancePool.UpdateStatus(ip)
-	if err != nil {
-		return ip, err
-	}
-	return ip, nil
+	return h.instancePool.UpdateStatus(ip)
 }
 
 // submitInstances will create instance objects
 func (h *handler) submitInstances(key string, ip *equinix.InstancePool) (*equinix.InstancePool, error) {
-
+	instanceLock.Lock()
 	logrus.Infof("submitting instances for instancePool %s", key)
 	credSecret := os.Getenv("EQUINIX_SECRET")
 	if credSecret == "" {
@@ -171,22 +164,14 @@ func (h *handler) submitInstances(key string, ip *equinix.InstancePool) (*equini
 		fmt.Errorf("no control-plane nodes found")
 	}
 
-	var joinAddress string
-
-	for _, address := range nodes.Items[0].Status.Addresses {
-		if address.Type == "PublicIP" {
-			joinAddress = address.Address
-		} else {
-			joinAddress = address.Address
-		}
+	joinAddress, err := h.findJoinAddress()
+	if err != nil {
+		return ip, err
 	}
-
-	joinToken := ip.Annotations["token"]
 
 	// lookup token and project id from secret
 	// set up as annotation
 
-	instanceLock.Lock()
 	for i := 1; i <= ip.Status.Needed; i++ {
 		suffix := util.LowerRandStringRunes(8)
 		i := &equinix.Instance{
@@ -194,7 +179,7 @@ func (h *handler) submitInstances(key string, ip *equinix.InstancePool) (*equini
 				Name: fmt.Sprintf("%s-%s", ip.Name, suffix),
 			},
 			Spec: equinix.InstanceSpec{
-				OS:             "custom-pxe",
+				OS:             "custom_ipxe",
 				Plan:           ip.Spec.Plan,
 				BillingCycle:   ip.Spec.BillingCycle,
 				Metro:          ip.Spec.Metro,
@@ -207,12 +192,21 @@ func (h *handler) submitInstances(key string, ip *equinix.InstancePool) (*equini
 			},
 		}
 
-		if ip.Spec.IPXEScriptURL != "" {
-			i.Spec.IPXEScriptURL = ip.Spec.IPXEScriptURL
-		} else {
-			i.Spec.IPXEScriptURL = DefaultIPXEScriptURL
+		i.Spec.IPXEScriptURL = InitialIPXEScriptURL
+
+		if ip.Spec.ManagementBondingOptions != nil {
+			i.Spec.ManagementBondingOptions = ip.Spec.ManagementBondingOptions
 		}
 
+		if ip.Spec.NodeCleanupWaitInterval != nil {
+			i.Spec.NodeCleanupWaitInterval = ip.Spec.NodeCleanupWaitInterval
+		}
+
+		if len(ip.Spec.ManagementInterfaces) != 0 {
+			i.Spec.ManagementInterfaces = ip.Spec.ManagementInterfaces
+		} else {
+			i.Spec.ManagementInterfaces = []string{DefaultInterface}
+		}
 		i.SetOwnerReferences([]metav1.OwnerReference{
 			{
 				APIVersion: "equinix.harvesterhci.io/v1",
@@ -227,8 +221,15 @@ func (h *handler) submitInstances(key string, ip *equinix.InstancePool) (*equini
 		annotations := make(map[string]string)
 		annotations["token"] = string(token)
 		annotations["password"] = util.RandStringRunes(16)
+
+		if ip.Spec.IPXEScriptURL != "" {
+			annotations["reconfig_ipxe_url"] = ip.Spec.IPXEScriptURL
+		} else {
+			annotations["reconfig_ipxe_url"] = DefaultIPXEScriptURL
+		}
+		i.SetAnnotations(annotations)
 		// generateCloudInit //
-		userData, err := generateCloudInit(ip, i, joinToken, joinAddress)
+		userData, err := generateCloudInit(ip, i, joinAddress)
 		if err != nil {
 			return ip, err
 		}
@@ -265,7 +266,7 @@ func (h *handler) reconcileInstances(_ string, ip *equinix.InstancePool) (*equin
 	readyCount := 0
 	presentCount := 0
 	for _, instance := range instanceList.Items {
-		if instance.Status.Status == "ready" {
+		if instance.Status.Status == "managed" {
 			readyCount++
 		}
 		presentCount++
@@ -298,11 +299,11 @@ func (h *handler) reconcileInstances(_ string, ip *equinix.InstancePool) (*equin
 
 }
 
-func generateCloudInit(ip *equinix.InstancePool, i *equinix.Instance, token, joinAddress string) (string, error) {
+func generateCloudInit(ip *equinix.InstancePool, i *equinix.Instance, joinAddress string) (string, error) {
 
 	hc := harvester.HarvesterConfig{
-		ServerURL: fmt.Sprintf("https://%s:6443", joinAddress),
-		Token:     token,
+		ServerURL: fmt.Sprintf("https://%s:8443", joinAddress),
+		Token:     ip.Status.Token,
 		OS: harvester.OS{
 			Hostname: i.Name,
 			Password: i.Annotations["password"],
@@ -311,22 +312,9 @@ func generateCloudInit(ip *equinix.InstancePool, i *equinix.Instance, token, joi
 			Automatic: true,
 			Mode:      "join",
 			TTY:       "ttyS1,115200n8",
-			Device:    "/dev/sda1",
+			Device:    "/dev/sda",
 		},
 	}
-
-	networks := make(map[string]harvester.Network)
-	networks["harvester-mgmt"] = harvester.Network{
-		Interfaces: []harvester.NetworkInterface{
-			{
-				Name: ip.Spec.ManagementInterface,
-			},
-		},
-		DefaultRoute: true,
-		Method:       "dhcp",
-	}
-
-	hc.Install.Networks = networks
 
 	// set ISO URL //
 	if ip.Spec.ISOURL != "" {
@@ -365,4 +353,14 @@ func (h *handler) removeInstances(_ string, ip *equinix.InstancePool) (*equinix.
 
 	ip.Status.Status = "submitted"
 	return h.instancePool.UpdateStatus(ip)
+}
+
+func (h *handler) findJoinAddress() (string, error) {
+	svc, err := h.service.Get("kube-system", DefaultIngressService, metav1.GetOptions{})
+
+	if err != nil {
+		return "", err
+	}
+
+	return svc.Status.LoadBalancer.Ingress[0].IP, nil
 }
