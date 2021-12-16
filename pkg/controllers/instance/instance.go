@@ -94,7 +94,7 @@ func (h *handler) OnInstanceRemove(_ string, i *equinix.Instance) (*equinix.Inst
 }
 
 func (h *handler) ResolveNode(_ string, node *v1.Node) (*v1.Node, error) {
-	if node.DeletionTimestamp == nil {
+	if node != nil && node.DeletionTimestamp == nil {
 		instanceName, err := h.findInstanceNodeMapping(node)
 		if err != nil {
 			return node, err
@@ -205,6 +205,9 @@ func (h *handler) findAndDeleteNode(i *equinix.Instance) error {
 }
 
 func (h *handler) findAndDeleteInstance(node *v1.Node) error {
+	if node == nil {
+		return nil
+	}
 	_, err := h.instance.Get(node.Name, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
