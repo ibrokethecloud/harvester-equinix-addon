@@ -33,6 +33,7 @@ type InstanceSpec struct {
 	NodeCleanupWaitInterval  *metav1.Duration  `json:"nodeCleanupWaitInterval,omitempty"`
 	ManagementInterfaces     []string          `json:"managementInterfaces,omitempty"`
 	ManagementBondingOptions map[string]string `json:"managementBondingOptions,omitempty"`
+	NetworkingConfiguration  `json:"networkingConfiguration,omitempty"`
 }
 
 // InstanceStatus defines the observed state of Instance

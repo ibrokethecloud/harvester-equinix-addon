@@ -14,3 +14,10 @@ spec:
     mode: balance-tlb
     miimon: "100"
   isoUrl: https://releases.rancher.com/harvester/v1.0.0-rc1/harvester-v1.0.0-rc1-amd64.iso
+  networkingConfiguration:
+    type: "hybrid"
+    interfaceConfiguration:
+      - name: eth1
+        vlanIDS:
+          - "1000"
+          - "1001"

@@ -35,6 +35,7 @@ type InstancePoolSpec struct {
 	Metro                    string            `json:"metro,omitempty"`
 	Facility                 []string          `json:"facility,omitempty"`
 	NodeCleanupWaitInterval  *metav1.Duration  `json:"nodeCleanupWaitInterval,omitempty"`
+	NetworkingConfiguration  `json:"networkingConfiguration,omitempty"`
 }
 
 type InstancePoolStatus struct {
@@ -43,4 +44,27 @@ type InstancePoolStatus struct {
 	Requested int    `json:"requested"`
 	Needed    int    `json:"needed"`
 	Token     string `json:"token"`
+}
+
+type NetworkingConfiguration struct {
+	Type       string                   `json:"type"`
+	Interfaces []InterfaceConfiguration `json:"interfaceConfiguration"`
+}
+
+type InterfaceConfiguration struct {
+	Name    string   `json:"name"`
+	VlanIDS []string `json:"vlanIDS"`
+}
+
+func (n *NetworkingConfiguration) IsEmpty() bool {
+	return n.Type == ""
+}
+
+func (n *NetworkingConfiguration) IsValidType() bool {
+	switch n.Type {
+	case "layer2-bonded", "layer2-individual", "layer3", "hybrid", "hybrid-bonded":
+		return true
+	}
+
+	return false
 }

@@ -128,6 +128,10 @@ func (m *MetalClient) ReInstallDevice(instance *api.Instance) (status *api.Insta
 		return status, err
 	}
 
+	err = m.UpdateNetworkConfig(device, instance.Spec.NetworkingConfiguration)
+	if err != nil {
+		return status, err
+	}
 	// find mac addresses //
 	macAddresses := []string{}
 
@@ -200,4 +204,126 @@ func updateCloudInit(baseCloudInit string, macAddresses []string, bondOptions ma
 	}
 
 	return fmt.Sprintf("#cloud-config\n%s", string(updatedCloudInit)), nil
+}
+
+func (m *MetalClient) UpdateNetworkConfig(device *packngo.Device, network api.NetworkingConfiguration) error {
+	err := m.ConvertDevice(device, network.Type)
+	if err != nil {
+		return err
+	}
+
+	// apply VLANS
+	for _, netInterface := range network.Interfaces {
+		port, err := device.GetPortByName(netInterface.Name)
+		if err != nil {
+			return err
+		}
+
+		for _, vlan := range netInterface.VlanIDS {
+			_, _, err = m.Client.Ports.Assign(port.ID, vlan)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// ConvertDevice is fork from Packngo ConvertDevice. Changed to use non deprecated port service
+// methods
+func (m *MetalClient) ConvertDevice(d *packngo.Device, targetType string) error {
+	bondPorts := d.GetBondPorts()
+	allEthPorts := d.GetPhysicalPorts()
+
+	bond0Port := bondPorts["bond0"]
+	var oddEthPorts []packngo.Port
+	for _, portName := range []string{"eth1", "eth3", "eth5", "eth7", "eth9"} {
+		if ethPort, ok := allEthPorts[portName]; ok {
+			oddEthPorts = append(oddEthPorts, *ethPort)
+		}
+
+	}
+
+	if targetType == "layer3" {
+		// TODO: remove vlans from all the ports
+		for _, p := range bondPorts {
+			_, _, err := m.Client.Ports.Bond(p.ID, false)
+			if err != nil {
+				return err
+			}
+		}
+
+		_, _, err := m.Client.Ports.ConvertToLayerThree(bond0Port.ID, []packngo.AddressRequest{
+			{AddressFamily: 4, Public: true},
+			{AddressFamily: 4, Public: false},
+			{AddressFamily: 6, Public: true},
+		})
+
+		if err != nil {
+			return err
+		}
+
+		for _, p := range allEthPorts {
+			_, _, err := m.Client.Ports.Bond(p.ID, false)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	if targetType == "hybrid" {
+		// ports need to be refreshed before bonding/disbonding
+		for _, p := range oddEthPorts {
+			if p.DisbondOperationSupported {
+				_, _, err := m.Client.Ports.Disbond(p.ID, false)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	if targetType == "layer2-individual" {
+		_, _, err := m.Client.Ports.ConvertToLayerTwo(bond0Port.ID)
+		if err != nil {
+			return err
+		}
+		for _, p := range allEthPorts {
+			if p.DisbondOperationSupported {
+				_, _, err = m.Client.Ports.Disbond(p.ID, true)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	if targetType == "layer2-bonded" {
+
+		for _, p := range bondPorts {
+			_, _, err := m.Client.Ports.ConvertToLayerTwo(p.ID)
+			if err != nil {
+				return err
+			}
+		}
+		for _, p := range allEthPorts {
+			_, _, err := m.Client.Ports.Bond(p.ID, false)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	if targetType == "hybrid-bonded" {
+		// nothing needs to be done. VLANS are just applied to bond0 interface
+		return nil
+	}
+
+	return fmt.Errorf("invalid network type %s in instance", targetType)
 }

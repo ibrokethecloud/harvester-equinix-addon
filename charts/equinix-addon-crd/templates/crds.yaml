@@ -75,6 +75,27 @@ spec:
               metro:
                 nullable: true
                 type: string
+              networkingConfiguration:
+                properties:
+                  interfaceConfiguration:
+                    items:
+                      properties:
+                        name:
+                          nullable: true
+                          type: string
+                        vlanIDS:
+                          items:
+                            nullable: true
+                            type: string
+                          nullable: true
+                          type: array
+                      type: object
+                    nullable: true
+                    type: array
+                  type:
+                    nullable: true
+                    type: string
+                type: object
               nodeCleanupWaitInterval:
                 nullable: true
                 type: string
@@ -210,6 +231,27 @@ spec:
               metro:
                 nullable: true
                 type: string
+              networkingConfiguration:
+                properties:
+                  interfaceConfiguration:
+                    items:
+                      properties:
+                        name:
+                          nullable: true
+                          type: string
+                        vlanIDS:
+                          items:
+                            nullable: true
+                            type: string
+                          nullable: true
+                          type: array
+                      type: object
+                    nullable: true
+                    type: array
+                  type:
+                    nullable: true
+                    type: string
+                type: object
               nodeCleanupWaitInterval:
                 nullable: true
                 type: string
@@ -334,6 +376,27 @@ spec:
             metro:
               nullable: true
               type: string
+            networkingConfiguration:
+              properties:
+                interfaceConfiguration:
+                  items:
+                    properties:
+                      name:
+                        nullable: true
+                        type: string
+                      vlanIDS:
+                        items:
+                          nullable: true
+                          type: string
+                        nullable: true
+                        type: array
+                    type: object
+                  nullable: true
+                  type: array
+                type:
+                  nullable: true
+                  type: string
+              type: object
             nodeCleanupWaitInterval:
               nullable: true
               type: string
@@ -470,6 +533,27 @@ spec:
             metro:
               nullable: true
               type: string
+            networkingConfiguration:
+              properties:
+                interfaceConfiguration:
+                  items:
+                    properties:
+                      name:
+                        nullable: true
+                        type: string
+                      vlanIDS:
+                        items:
+                          nullable: true
+                          type: string
+                        nullable: true
+                        type: array
+                    type: object
+                  nullable: true
+                  type: array
+                type:
+                  nullable: true
+                  type: string
+              type: object
             nodeCleanupWaitInterval:
               nullable: true
               type: string

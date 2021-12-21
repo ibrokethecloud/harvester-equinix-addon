@@ -26,6 +26,13 @@ spec:
   managementBondingOptions:
     mode: balance-tlb
     miimon: "100"
+  networkingConfiguration:
+    type: "hybrid"
+    interfaceConfiguration:
+      - name: eth1
+        vlanIDS:
+          - "1000"
+          - "1001"
 ```
 
 The operator will provision and manage Equinix Metal instances
@@ -49,3 +56,72 @@ The provisioning flow is as follows:
 
 
 ** NOTE** The re-install is needed as we need to query the MacAddress of the nodes before actually trying to install Harvester with the appropriate Join configuration.
+
+
+### Network Configuration
+The operator allows the network to be configured on the nodes in the instance pool based on the networkConfiguration
+
+A sample configuration looks as follows:
+
+
+
+By default the newly configured nodes are launched in layer3 mode, with all physical interfaces bonded to a bond0 interface.
+
+This can be changed by the various network types:
+
+**type: hybird**
+In this mode all odd numbered physical ports are unbonded from bond0, and made available for assignment to a vlan. In the example above eth1 is assigned to two layer2 vlans named 1000 and 1001. Corresponds to https://metal.equinix.com/developers/docs/layer2-networking/hybrid-unbonded-mode/
+
+```yaml
+  networkingConfiguration:
+    type: "hybrid"
+    interfaceConfiguration:
+      - name: eth1
+        vlanIDS:
+          - "1000"
+          - "1001"
+```
+
+**type: hybrid-bonded**
+In this mode the bond0 interface is assigned to the vlans. Corresponds to https://metal.equinix.com/developers/docs/layer2-networking/hybrid-bonded-mode/
+
+```yaml
+  networkingConfiguration:
+    type: "hybrid-bonded"
+    interfaceConfiguration:
+      - name: bond0
+        vlanIDS:
+          - "1000"
+          - "1001"
+```
+
+
+**type: layer2-bonded**
+In this mode, all interfaces are converted to layer2 networking and bonded. The bond0 interface can now be assigned to layer2 vlans.
+
+```yaml
+  networkingConfiguration:
+    type: "layer2-bonded"
+    interfaceConfiguration:
+      - name: bond0
+        vlanIDS:
+          - "1000"
+          - "1001"
+```
+
+
+**type: layer2-individual**
+In this mode, all interfaces are converted to layer2 networking.Now each individual interface can be assigned to layer2 vlans.
+
+```yaml
+  networkingConfiguration:
+    type: "layer2-individual"
+    interfaceConfiguration:
+      - name: eth0
+        vlanIDS:
+          - "1000"
+      - name: eth1
+        vlanIDS:
+          - "1000"
+          - "1001"
+```

@@ -227,6 +227,15 @@ func (h *handler) submitInstances(key string, ip *equinix.InstancePool) (*equini
 		} else {
 			annotations["reconfig_ipxe_url"] = DefaultIPXEScriptURL
 		}
+
+		if !ip.Spec.NetworkingConfiguration.IsEmpty() {
+			if ip.Spec.NetworkingConfiguration.IsValidType() {
+				i.Spec.NetworkingConfiguration = ip.Spec.NetworkingConfiguration
+			} else {
+				return ip, fmt.Errorf("invalid network configuration type %s in instancePool %s", ip.Spec.NetworkingConfiguration.Type, ip.Name)
+			}
+
+		}
 		i.SetAnnotations(annotations)
 		// generateCloudInit //
 		userData, err := generateCloudInit(ip, i, joinAddress)
