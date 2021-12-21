@@ -118,9 +118,13 @@ func (h *handler) ResolveNode(_ string, node *v1.Node) (*v1.Node, error) {
 
 	}
 
-	// node has a deletion timestamp
-	err := h.findAndDeleteInstance(node)
-	return node, err
+	if node != nil && node.DeletionTimestamp != nil {
+		// node has a deletion timestamp
+		err := h.findAndDeleteInstance(node)
+		return node, err
+	}
+
+	return node, nil
 }
 
 func (h *handler) findInstanceNodeMapping(node *v1.Node) (instanceName string, err error) {
@@ -233,6 +237,7 @@ func (h *handler) managedNodeNotReady(node *v1.Node) (*equinix.Instance, bool, e
 	}
 
 	if nodeUnhealthy {
+		logrus.Infof("node %s is unhealthy", node.Name)
 		// check if a corresponding instance object exists
 		i, err := h.instance.Get(node.Name, metav1.GetOptions{})
 		if err != nil {
