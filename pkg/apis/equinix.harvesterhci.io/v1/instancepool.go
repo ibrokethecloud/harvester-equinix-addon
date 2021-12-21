@@ -21,7 +21,7 @@ type InstancePoolSpec struct {
 	Count                    int               `json:"count"`
 	BillingCycle             string            `json:"billingCycle,omitempty"`
 	SpotInstance             bool              `json:"spotInstance,omitempty"`
-	SpotPriceMax             resource.Quantity `json:"spotPriceMax,omitempty,string"`
+	SpotPriceMax             resource.Quantity `json:"spotPriceMax,omitempty"`
 	CustomData               string            `json:"customData,omitempty"`
 	UserSSHKeys              []string          `json:"usersshKeys,omitempty"`
 	ProjectSSHKeys           []string          `json:"projectsshKeys,omitempty"`

@@ -1,0 +1,7 @@
+image:
+  repository: gmehta3/harvester-equinix-addon
+  tag: dev
+  imagePullPolicy: IfNotPresent
+
+nodeSelector:
+  node-role.kubernetes.io/master: "true"

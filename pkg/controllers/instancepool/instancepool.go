@@ -154,14 +154,14 @@ func (h *handler) submitInstances(key string, ip *equinix.InstancePool) (*equini
 	}
 
 	nodes, err := h.node.List(metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("node-role.kubernetes.io/control-plane=true"),
+		LabelSelector: "node-role.kubernetes.io/control-plane=true",
 	})
 	if err != nil {
 		return ip, err
 	}
 
 	if len(nodes.Items) == 0 {
-		fmt.Errorf("no control-plane nodes found")
+		return ip, fmt.Errorf("no control-plane nodes found")
 	}
 
 	joinAddress, err := h.findJoinAddress()

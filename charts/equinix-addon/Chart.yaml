@@ -1,0 +1,5 @@
+apiVersion: v2
+name: harvester-equinix-addon
+description: Harvester Addon to manage node pools in Equinix Metal
+version: 0.0.0
+appVersion: 0.0.0

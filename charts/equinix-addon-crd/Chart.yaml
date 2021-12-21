@@ -1,0 +1,5 @@
+apiVersion: v2
+name: equinix-addon-crd
+description: Harvester Equinix Addon CRD
+version: 0.0.0
+appVersion: 0.0.0

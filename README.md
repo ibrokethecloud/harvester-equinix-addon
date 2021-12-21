@@ -125,3 +125,8 @@ In this mode, all interfaces are converted to layer2 networking.Now each individ
           - "1000"
           - "1001"
 ```
+
+### InstancePool Management
+The operator watches the node events and can replace nodes by replacing unhealthy nodes.
+
+If an InstancePool Spec contains a value for `nodeCleanupWaitInterval: 5m` then nodes managed by the operator which are unhealthy for more than the specified duration are replaced by the operator

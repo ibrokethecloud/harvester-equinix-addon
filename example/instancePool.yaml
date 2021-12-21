@@ -15,9 +15,9 @@ spec:
     miimon: "100"
   isoUrl: https://releases.rancher.com/harvester/v1.0.0-rc1/harvester-v1.0.0-rc1-amd64.iso
   networkingConfiguration:
-    type: "hybrid"
+    type: "hybrid-bonded"
     interfaceConfiguration:
-      - name: eth1
+      - name: bond0
         vlanIDS:
           - "1000"
           - "1001"
