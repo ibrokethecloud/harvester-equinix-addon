@@ -1,7 +1,7 @@
 apiVersion: equinix.harvesterhci.io/v1
 kind: InstancePool
 metadata:
-  name: harvester-pxe-worker
+  name: harvester-custom-network-worker
 spec:
   count: 1
   billingCycle: hourly
@@ -14,3 +14,10 @@ spec:
     mode: balance-tlb
     miimon: "100"
   isoUrl: https://releases.rancher.com/harvester/v1.0.0/harvester-v1.0.0-amd64.iso
+  networkingConfiguration:
+    type: "hybrid-bonded"
+    interfaceConfiguration:
+      - name: bond0
+        vlanIDS:
+          - "1000"
+          - "1001"

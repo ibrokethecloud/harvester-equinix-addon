@@ -207,6 +207,12 @@ func updateCloudInit(baseCloudInit string, macAddresses []string, bondOptions ma
 }
 
 func (m *MetalClient) UpdateNetworkConfig(device *packngo.Device, network api.NetworkingConfiguration) error {
+
+	if network.Type == "" {
+		// no actual network reconfig is needed
+		return nil
+	}
+
 	err := m.ConvertDevice(device, network.Type)
 	if err != nil {
 		return err
