@@ -69,7 +69,7 @@ By default the newly configured nodes are launched in layer3 mode, with all phys
 
 This can be changed by the various network types:
 
-**type: hybird**
+**type: hybrid**
 In this mode all odd numbered physical ports are unbonded from bond0, and made available for assignment to a vlan. In the example above eth1 is assigned to two layer2 vlans named 1000 and 1001. Corresponds to https://metal.equinix.com/developers/docs/layer2-networking/hybrid-unbonded-mode/
 
 ```yaml
